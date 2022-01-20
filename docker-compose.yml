@@ -1,0 +1,54 @@
+version: "3"
+services:
+
+  db:
+    image: postgres
+    restart: unless-stopped
+    volumes:
+      - db:/var/lib/postgresql/data
+    ports:
+      - "5491:5432" # use port that you want to in your local instead of 5491
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    command: bash -c "rm -f /api/tmp/pids/server.pid && foreman start -f /api/Procfile"
+    environment:
+      - PORT=3000
+    volumes:
+      - ./server:/api
+      - rails_log:/api/log
+    ports:
+      - "3091:3000" # use port that you want to in your local instead of 3091
+    depends_on:
+      - db
+
+  # client:
+  #   build: ./client
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8091:8080" # use port that you want to in your local instead of 8091
+  #   volumes:
+  #     - ./client:/client
+  #     - client_node_modules:/client/node_modules
+  #   depends_on:
+  #     - server
+
+volumes:
+  db:
+  rails_log:
+  client_node_modules:
